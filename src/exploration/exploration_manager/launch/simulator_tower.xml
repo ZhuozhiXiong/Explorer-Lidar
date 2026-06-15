@@ -1,0 +1,141 @@
+<launch>
+  <arg name="init_x"/>
+  <arg name="init_y"/>
+  <arg name="init_z"/> 
+  <arg name="map_size_x_"/>
+  <arg name="map_size_y_"/>
+  <arg name="map_size_z_"/>
+  <arg name="box_min_x"/>
+  <arg name="box_min_y"/>
+  <arg name="box_min_z"/>
+  <arg name="box_max_x"/>
+  <arg name="box_max_y"/>
+  <arg name="box_max_z"/>
+  <arg name="c_num"/>
+  <arg name="p_num"/>
+  <arg name="odometry_topic"/>
+  <arg name="obj_num" value="1" />
+
+  <!-- map generation -->
+  <!-- Change office.pcd to specify the exploration environment -->
+  <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/bridge.pcd"/> -->
+
+  <node pkg="map_generator" name="map_pub" type="map_pub" output="screen" args="$(find map_generator)/resource/tower.pcd">
+      <param name="add_boundary" value="1" />
+      <param name="is_bridge" value="0" />
+      <param name="downsample_res" value="0.1" />
+      <param name="map_offset_x" value="0.0" />
+      <param name="map_offset_y" value="0.0" />
+      <param name="map_offset_z" value="0.0" />
+  </node>
+
+  <!-- subscribe command (force and pose) and convert it to rpms of 4 rotors -->
+  <!-- Simulate the quadrotor and advertise real odom and imu under disturbance -->
+  <node pkg="so3_quadrotor_simulator" type="quadrotor_simulator_so3" name="quadrotor_simulator_so3" output="screen">
+        <param name="rate/odom" value="200.0"/>
+        <param name="simulator/init_state_x" value="$(arg init_x)"/>
+        <param name="simulator/init_state_y" value="$(arg init_y)"/>
+        <param name="simulator/init_state_z" value="$(arg init_z)"/>
+
+        <remap from="~odom" to="/visual_slam/odom"/>
+        <remap from="~cmd" to="so3_cmd"/>
+        <remap from="~force_disturbance" to="force_disturbance"/>    
+        <remap from="~moment_disturbance" to="moment_disturbance"/>        
+  </node>
+ 
+  <!-- subscribe planned trajectory and advertise command (force and pose) -->
+  <node pkg="nodelet" type="nodelet" args="standalone so3_control/SO3ControlNodelet" name="so3_control" required="true" output="screen">
+        <remap from="~odom" to="/state_ukf/odom"/>
+        <remap from="~position_cmd" to="/planning/pos_cmd"/>
+        <remap from="~motors" to="motors"/>
+        <remap from="~corrections" to="corrections"/>
+        <remap from="~so3_cmd" to="so3_cmd"/>
+        <rosparam file="$(find so3_control)/config/gains_hummingbird.yaml"/>
+        <rosparam file="$(find so3_control)/config/corrections_hummingbird.yaml"/>
+        <param name="mass" value="0.98"/>
+        <param name="use_angle_corrections " value="false"/>
+        <param name="use_external_yaw "      value="false"/>
+        <param name="gains/rot/z" value="1.0"/>    
+        <param name="gains/ang/z" value="0.1"/>        
+  </node>  
+ 
+  <!-- simulate real-world environment by generating force and moment disturbance -->
+  <node pkg="so3_disturbance_generator" name="so3_disturbance_generator" type="so3_disturbance_generator" output="screen">
+        <remap from="~odom" to="/visual_slam/odom"/>             
+        <remap from="~noisy_odom" to="/state_ukf/odom"/>          
+        <remap from="~correction" to="/visual_slam/correction"/>   
+        <remap from="~force_disturbance" to="force_disturbance"/>        
+        <remap from="~moment_disturbance" to="moment_disturbance"/>            
+  </node> 
+ 
+  <!-- visualize the quadrotor and the real odom -->
+  <node pkg="odom_visualization" name="odom_visualization" type="odom_visualization" output="screen">
+        <remap from="~odom" to="/visual_slam/odom"/>
+        <param name="color/a" value="1.0"/>    
+        <param name="color/r" value="0.0"/>        
+        <param name="color/g" value="0.0"/>        
+        <param name="color/b" value="1.0"/>       
+        <param name="covariance_scale" value="100.0"/>       
+        <param name="robot_scale" value="1.0"/>
+  </node>
+
+  <!-- subscribe the real odom and the point cloud of global map -->
+  <!-- simulate perception, render depth images and estimate the odom -->
+  <!-- advertise depth image and estimated odom -->
+  <!-- <node pkg="local_sensing_node" type="pcl_render_node" name="pcl_render_node" output="screen">
+        <rosparam command="load" file="$(find local_sensing_node)/params/camera.yaml" />
+        <param name="sensing_horizon"  value="5.0" />
+        <param name="sensing_rate"     value="15.0"/>
+        <param name="estimation_rate"  value="15.0"/>
+        <param name="render_point_size"  value="0.12"/>
+
+        <param name="map/x_size"     value="$(arg map_size_x_)"/>
+        <param name="map/y_size"     value="$(arg map_size_y_)"/>
+        <param name="map/z_size"     value="$(arg map_size_z_)"/>
+
+        <remap from="~global_map" to="/map_generator/global_cloud"/>
+        <remap from="~odometry"   to="$(arg odometry_topic)"/>
+  </node> -->
+
+  <node pkg="local_sensing_node" type="opengl_render_node" name="pcl_render_node" output="screen">
+      <remap from="~global_map" to="/map_generator/global_cloud"/>
+      <remap from="~odometry" to="$(arg odometry_topic)"/>
+      <param name="pcd_path" value="$(find map_generator)/resource/tower.pcd"/>
+
+      <param name="drone_id" value="0"/>
+      <param name="quadrotor_name" value="0"/>
+      <param name="uav_num" value="1"/>
+      <param name="is_360lidar" value="1"/>
+      <param name="sensing_horizon" value="55.0"/>
+      <param name="sensing_rate" value="10.0"/>
+      <param name="estimation_rate" value="10.0"/>
+      <param name="polar_resolution" value="0.2"/>
+      <param name="yaw_fov" value="360.0"/>
+      <param name="vertical_fov" value="90.0"/>
+      <param name="min_raylength" value="0.5"/>
+      <param name="livox_linestep" value="1.4"/>
+      <param name="curvature_limit" value="100.0"/>
+      <param name="hash_cubesize" value="5.0"/>
+      <param name="use_avia_pattern" value="0"/>
+      <param name="use_vlp32_pattern" value="0"/>
+      <param name="use_minicf_pattern" value="1"/>
+      <param name="lidar_pitch" value="$(eval 0 * 3.1415926 / 180.0)"/>
+
+      <param name="downsample_res" value="0.25"/>
+
+      <param name="dynobj_enable" value="0"/>
+      <param name="dynobject_size" value="0.6"/>
+      <param name="dynobject_num" value="30"/>
+      <param name="dyn_mode" value="2"/>
+      <!-- 0 for a=0, 1 for a=g, 2 for random walk -->
+      <param name="dyn_velocity" value="3.0"/>
+
+      <param name="use_uav_extra_model" value="1"/>
+
+      <!-- collision parameter -->
+      <param name="collisioncheck_enable" value="0"/>
+      <param name="collision_range" value="0.3"/>
+      <param name="output_pcd" value="0"/>
+  </node>
+
+</launch>

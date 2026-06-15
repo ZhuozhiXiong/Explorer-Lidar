@@ -1,0 +1,2 @@
+FAST_LIO:livox_ros_driver/livox_ros_driver:livox_ros_driver2
+-DCATKIN_DEVEL_PREFIX=/home/tf2/REAL_DRONE_400-main/src/realflight_modules/mid360_fastlio/devel -DCMAKE_INSTALL_PREFIX=/home/tf2/REAL_DRONE_400-main/src/realflight_modules/mid360_fastlio/install -G Unix Makefiles
