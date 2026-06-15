@@ -1,14 +1,17 @@
-# Explorer-lidar
+# Explorer-Lidar
+[![ROS Noetic](https://img.shields.io/badge/ROS-Noetic-blue)](http://wiki.ros.org/noetic)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-20.04-orange)](https://releases.ubuntu.com/20.04/)
+[![Language](https://img.shields.io/badge/Language-C++-blue)](https://isocpp.org/)
 
-Explorer-lidar is a ROS/catkin project for LiDAR-based active exploration with aerial robots. It integrates frontier-based exploration, local mapping, trajectory planning, obstacle avoidance, simulation sensing, and real-world flight modules for UAV experiments.
+Explorer-Lidar is a ROS/catkin project for LiDAR-based autonomous exploration with aerial robots. It integrates Lidar-based SLAM, frontier-based exploration, local mapping, path planning, trajectory generation and controller for UAV experiments to explore unseen environments and obtain 3D point cloud of structures.
 
-The project supports both simulation demos, such as bridge and tower exploration, and real-flight experiments with LiDAR, SLAM/LIO, MAVROS, PX4, and onboard planning.
+The project supports both simulation demos, such as bridge and tower exploration, and real-flight experiments with LiDAR, Fast-LIO, MAVROS, PX4, and onboard planning.
 
 ## Demo
 
 | Aerial Robot |
 | --- |
-| ![Aerial robot](images/aerial%20robot.jpg) |
+| <img src="images/aerial%20robot.jpg" alt="Aerial Robot" width="600">|
 
 | SLAM - Park | SLAM - Zhishanting |
 | --- | --- |
@@ -18,13 +21,13 @@ The project supports both simulation demos, such as bridge and tower exploration
 | --- |
 | ![Obstacle avoidance](images/obstacle_avoidance.gif) |
 
-| Active Exploration |
+| Autonomous Exploration |
 | --- |
 | ![Exploration demo](images/explore.gif) |
 
 ## Features
 
-- LiDAR-based active exploration in unknown environments
+- LiDAR-based autonomous exploration in unknown environments
 - Occupancy/ESDF map construction and local map update
 - Frontier detection, viewpoint selection, and TSP-based visiting order optimization
 - B-spline trajectory generation, optimization, and visualization
@@ -47,7 +50,7 @@ The project supports both simulation demos, such as bridge and tower exploration
 
 ## Quick Start
 
-This project has been tested on Ubuntu 20.04 with ROS Noetic
+This project has been tested on Ubuntu 20.04 with ROS Noetic. The installation can be referenced to [ZJU-FAST-Lab/Fast-Drone-250](https://github.com/ZJU-FAST-Lab/Fast-Drone-250) and [NEU-REAL/REAL_DRONE_400](https://github.com/NEU-REAL/REAL_DRONE_400) for detailed information.
 
 ### 1. Install NLOPT
 
@@ -74,7 +77,7 @@ sudo apt install -y \
   ros-noetic-tf ros-noetic-rviz ros-noetic-nodelet \
   ros-noetic-ddynamic-reconfigure \
   libeigen3-dev libpcl-dev libopencv-dev libarmadillo-dev \
-  liblapack-dev libsuitesparse-dev libcxsparse3.1.2 \
+  liblapack-dev libsuitesparse-dev libcxsparse3.0 \
   libgflags-dev libgoogle-glog-dev libgtest-dev \
   libglew-dev libglfw3-dev
 ```
@@ -104,32 +107,9 @@ realsense-viewer
 
 Make sure the USB mode shown in the upper-left corner is `3.x`. If it shows `2.x`, check whether the USB cable or port only supports USB 2.0. USB 3.0 cables and ports are usually blue.
 
-### 4. Install Ceres and glog
+If there is a problem in installing this driver, you can refer to [RealenseSDK-FIX](https://github.com/Hyper-jiawei/-Fastlab-Fast-drone-250-realenseSDK-FIX-).
 
-If you use the provided `3rd_party.zip`, extract it first.
-
-Build and install `glog`:
-
-```bash
-cd glog
-./autogen.sh
-./configure
-make
-sudo make install
-```
-
-Build and install `ceres`:
-
-```bash
-cd ceres
-mkdir build
-cd build
-cmake ..
-sudo make -j4
-sudo make install
-```
-
-### 5. Install Livox SDK2
+### 4. Install Livox SDK2
 
 ```bash
 git clone https://github.com/Livox-SDK/Livox-SDK2.git
@@ -141,37 +121,58 @@ make -j$(nproc)
 sudo make install
 ```
 
-Installing Livox SDK2 system-wide is important so that CMake can find it.
-
-### 6. Clone and Build Explorer-lidar
+### 5. Clone and Build Explorer-lidar
 
 ```bash
-cd ${YOUR_WORKSPACE_PATH}/src
-git clone <this-repository-url> Explorer-lidar
-cd ..
+git clone https://github.com/ZhuozhiXiong/Explorer-Lidar.git
+cd Explorer-Lidar
 catkin_make
-source devel/setup.bash
 ```
 
-If this repository is already your catkin workspace root, build it directly:
+To simulate the depth camera, we use a simulator based on CUDA Toolkit. Please install it first following the [instruction of CUDA](https://developer.nvidia.com/zh-cn/cuda-toolkit). 
 
-```bash
-cd ~/Explorer-lidar
-source /opt/ros/noetic/setup.bash
-catkin_make
-source devel/setup.bash
-```
+After successful installation, in the **local_sensing** package in **uav_simulator**, remember to change the 'arch' and 'code' flags in CMakelist.txt according to your graphics card devices.
 
-If your workspace path is not `~/Explorer-lidar`, replace the path with your actual location. The script `shfiles/autoflight.sh` uses `~/Explorer-lidar` as the default workspace path, so update `WS_PATH` in that script if needed.
+If you cannot get access to CUDA, you can use the CPU version instead by revising **set(ENABLE_CUDA false)** in CMakelist.txt.
 
 ## Run the Project
 
 Before launching any demo, source the workspace:
 
 ```bash
-cd ~/Explorer-lidar
+cd Explorer-Lidar
 source devel/setup.bash
 ```
+
+### Bridge Simulation
+
+```bash
+roslaunch exploration_manager sim_bridge.launch
+```
+
+Launch file:
+
+```text
+src/exploration/exploration_manager/launch/sim_bridge.launch
+```
+
+This launch file starts RViz, the exploration algorithm, trajectory server, trajectory recorder, SO3 quadrotor simulator, disturbance simulator, map publisher, and LiDAR/depth sensing simulation. The default map is `bridge.pcd`.
+
+y default you can see an bridge environment. Trigger the quadrotor to start inspection by the ```2D Nav Goal``` tool in ```Rviz```. The FoV and trajectories of the quadrotor are displayed.
+
+### Tower Simulation
+
+```bash
+roslaunch exploration_manager sim_tower.launch
+```
+
+Launch file:
+
+```text
+src/exploration/exploration_manager/launch/sim_tower.launch
+```
+
+This launch file is similar to the bridge simulation and uses `tower.pcd` as the default map.
 
 ### Real-World Experiment
 
@@ -190,35 +191,20 @@ Default subscribed topics:
 - Odometry: `/Odom_high_freq`
 - Registered world-frame point cloud: `/cloud_registered`
 
-This launch file starts the exploration planner and trajectory server. It is intended for experiments where the external SLAM/LIO, point cloud, and flight-control links are already running.
+This launch file starts the exploration planner and trajectory server. It is intended for experiments where the external SLAM/LIO, point cloud, and flight-control links are already running by using `sh shfiles/autoflight.sh` in another terminal.
 
-### Bridge Simulation
+## Real-Flight Helper Scripts
 
-```bash
-roslaunch exploration_manager sim_bridge.launch
-```
-
-Launch file:
-
-```text
-src/exploration/exploration_manager/launch/sim_bridge.launch
-```
-
-This launch file starts RViz, the exploration algorithm, trajectory server, trajectory recorder, SO3 quadrotor simulator, disturbance simulator, map publisher, and LiDAR/depth sensing simulation. The default map is `bridge.pcd`.
-
-### Tower Simulation
+The `shfiles/` directory provides helper scripts for real-world experiments:
 
 ```bash
-roslaunch exploration_manager sim_tower.launch
+sh shfiles/autoflight.sh   # Start sensors, mapping, planning, PX4 control, and rosbag recording
+sh shfiles/takeoff.sh      # Send takeoff command
+sh shfiles/land.sh         # Send landing command
+sh shfiles/record.sh       # Record common exploration topics
 ```
 
-Launch file:
-
-```text
-src/exploration/exploration_manager/launch/sim_tower.launch
-```
-
-This launch file is similar to the bridge simulation and uses `tower.pcd` as the default map.
+Before running real-flight scripts, make sure the flight controller, RC transmitter, safety switch, emergency stop procedure, device permissions, and ROS topics are correctly configured.
 
 ## Useful Parameters
 
@@ -238,39 +224,6 @@ src/exploration/exploration_manager/launch/algorithm_exp.xml
 src/exploration/exploration_manager/launch/algorithm_sim_bridge.xml
 src/exploration/exploration_manager/launch/algorithm_sim_tower.xml
 ```
-
-## Real-Flight Helper Scripts
-
-The `shfiles/` directory provides helper scripts for real-world experiments:
-
-```bash
-bash shfiles/autoflight.sh   # Start sensors, mapping, planning, PX4 control, and rosbag recording
-bash shfiles/takeoff.sh      # Send takeoff command
-bash shfiles/land.sh         # Send landing command
-bash shfiles/record.sh       # Record common exploration topics
-```
-
-Before running real-flight scripts, make sure the flight controller, RC transmitter, safety switch, emergency stop procedure, device permissions, and ROS topics are correctly configured.
-
-## Visualization and Data Recording
-
-- Simulation launch files start RViz automatically.
-- Trajectory records are saved to `exploration_manager/data` by default.
-- `autoflight.sh` saves logs to `logs/<time>/` and rosbag files to `bags/`.
-
-## Notes for Uploading to GitHub
-
-Avoid committing local build outputs, logs, and rosbag files:
-
-```text
-build/
-devel/
-logs/
-bags/
-*.bag
-```
-
-This repository contains several third-party and modified modules. Before a public release, please add the required license information and check the original license terms of each dependency.
 
 ## Acknowledgements
 
