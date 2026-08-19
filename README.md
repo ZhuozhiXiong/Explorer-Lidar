@@ -25,6 +25,10 @@ The project supports both simulation demos, such as bridge and tower exploration
 | --- |
 | ![Exploration demo](images/explore.gif) |
 
+| Autonomous Inspection |
+| --- |
+| ![Inspection demo](images/inspection.gif) |
+
 ## Features
 
 - LiDAR-based autonomous exploration in unknown environments
