@@ -9,25 +9,45 @@ The project supports both simulation demos, such as bridge and tower exploration
 
 ## Demo
 
+<div align="center">
+
 | Aerial Robot |
 | --- |
-| <img src="images/aerial%20robot.jpg" alt="Aerial Robot" width="600">|
+| <img src="images/aerial%20robot.jpg" alt="Aerial Robot" width="600"> |
+
+</div>
+
+<div align="center">
 
 | SLAM - Park | SLAM - Zhishanting |
 | --- | --- |
-| ![SLAM park demo](images/slam_park.gif) | ![SLAM zhishanting demo](images/slam_zhishanting.gif) |
+| <img src="images/slam_park.gif" alt="SLAM park demo" width="300"> | <img src="images/slam_zhishanting.gif" alt="SLAM zhishanting demo" width="300"> |
+
+</div>
+
+<div align="center">
 
 | Obstacle Avoidance |
 | --- |
-| ![Obstacle avoidance](images/obstacle_avoidance.gif) |
+| <img src="images/obstacle_avoidance.gif" alt="Obstacle avoidance" width="600"> |
+
+</div>
+
+<div align="center">
 
 | Autonomous Exploration |
 | --- |
-| ![Exploration demo](images/explore.gif) |
+| <img src="images/explore.gif" alt="Exploration demo" width="600"> |
+
+</div>
+
+<div align="center">
 
 | Autonomous Inspection |
 | --- |
-| ![Inspection demo](images/inspection.gif) |
+| <img src="images/inspection.gif" alt="Inspection demo" width="600"> |
+
+</div>
 
 ## Features
 
